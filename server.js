@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 // Import configuration and models
 const connectDB = require('./config/db');
 const User = require('./models/User');
-const { Client, Events, GatewayIntentBits } = require('discord.js');
+
 // Load environment variables
 dotenv.config();
 
@@ -21,21 +21,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-
-client.on(Events.ClientReady, readyClient => {
-    console.log(`Logged in as ${readyClient.user.tag}!`);
+// Keep-alive route for Render and Cron-job.org
+app.get('/', (req, res) => {
+    res.status(200).send('Bot is Online and Spying! 🕵️');
 });
 
-client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+// Import and start the Discord bot (this will handle all Discord events)
+require('./bot');
+require('./ghostMonitor');
 
-    if (interaction.commandName === 'ping') {
-        await interaction.reply('Pong!');
-    }
-});
-const discordToken = process.env.DISCORDBOTTOKEN;
-client.login(discordToken);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

@@ -2,8 +2,8 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 // Create transporter for email sending
-const createTransporter = () => {
-    return nodemailer.createTransporter({
+const createTransport = () => {
+    return nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: process.env.SMTP_PORT || 587,
         secure: false, // true for 465, false for other ports
@@ -17,7 +17,7 @@ const createTransporter = () => {
 // Send notification email to admin
 const sendServerJoinNotification = async (serverName, serverId, memberCount) => {
     try {
-        const transporter = createTransporter();
+        const transporter = createTransport();
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -46,7 +46,7 @@ const sendServerJoinNotification = async (serverName, serverId, memberCount) => 
 // Send user join notification
 const sendUserJoinNotification = async (serverName, userName, channelName) => {
     try {
-        const transporter = createTransporter();
+        const transporter = createTransport();
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -76,3 +76,13 @@ module.exports = {
     sendServerJoinNotification,
     sendUserJoinNotification
 };
+
+
+
+
+ const numbers = [2,3,4,5,6,7,8,9,10];
+
+ if (numbers / 2 === 0) {
+    console.log("even");
+ }
+

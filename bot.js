@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const connectDB = require('./config/db');
 const DiscordServer = require('./models/DiscordServer');
 const { sendServerJoinNotification, sendUserJoinNotification } = require('./services/emailService');
@@ -9,7 +9,7 @@ require('dotenv').config();
 // Connect to MongoDB
 connectDB();
 
-// Create a new client instance
+// Create a new client instance with the necessary intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -20,6 +20,12 @@ const client = new Client({
 // When the client is ready, run this code (only once)
 client.once('ready', () => {
     console.log(`Bot logged in as ${client.user.tag}!`);
+    console.log(`Bot is in ${client.guilds.cache.size} servers`);
+    
+    // Log all servers the bot is in
+    client.guilds.cache.forEach(guild => {
+        console.log(`  - ${guild.name} (ID: ${guild.id}) - ${guild.memberCount} members`);
+    });
 });
 
 // Handle when bot is added to a new server
@@ -35,6 +41,15 @@ client.on('guildCreate', async (guild) => {
             return;
         }
 
+        // Fetch the owner to get their username
+        let ownerUsername = 'Unknown';
+        try {
+            const owner = await guild.fetchOwner();
+            ownerUsername = owner.user.tag;
+        } catch (error) {
+            console.error('Error fetching owner:', error);
+        }
+
         // Create new server document
         const serverData = new DiscordServer({
             id: guild.id,
@@ -42,7 +57,7 @@ client.on('guildCreate', async (guild) => {
             memberCount: guild.memberCount,
             owner: {
                 id: guild.ownerId,
-                username: guild.owner ? guild.owner.user.username : 'Unknown'
+                username: ownerUsername
             }
         });
 
@@ -81,37 +96,80 @@ client.on('guildDelete', async (guild) => {
     }
 });
 
-// Handle user joins in channels (you'll need to specify which channels to monitor)
+// Handle when a new member joins the server
 client.on('guildMemberAdd', async (member) => {
     try {
-        // Get the guild (server) the member joined
         const guild = member.guild;
+        
+        console.log(`New member joined: ${member.user.tag} in server: ${guild.name}`);
 
-        // You can add logic here to check if the user was added to specific channels
-        // For now, we'll send a notification for any new member
+        // Send email notification
         const emailSent = await sendUserJoinNotification(
             guild.name,
             member.user.tag,
-            'Server'
+            'Server (New Member)'
         );
 
         if (emailSent) {
-            console.log(`User join notification sent for ${member.user.tag} in ${guild.name}`);
+            console.log(`✅ User join notification sent for ${member.user.tag} in ${guild.name}`);
         } else {
-            console.log(`Failed to send user join notification for ${member.user.tag}`);
+            console.log(`❌ Failed to send user join notification for ${member.user.tag}`);
         }
+
+        // Post message to #new-members channel
+        const newMembersChannel = guild.channels.cache.find(
+            channel => channel.name === 'new-members' && channel.isTextBased()
+        );
+
+        if (!newMembersChannel) {
+            console.log(`⚠️ Could not find #new-members channel in ${guild.name}`);
+            console.log(`Available channels: ${guild.channels.cache.map(ch => ch.name).join(', ')}`);
+            return;
+        }
+
+        // Check bot permissions in the channel
+        const permissions = newMembersChannel.permissionsFor(client.user);
+        if (!permissions.has('SendMessages')) {
+            console.log(`❌ Bot lacks Send Messages permission in #new-members`);
+            return;
+        }
+        if (!permissions.has('EmbedLinks')) {
+            console.log(`⚠️ Bot lacks Embed Links permission in #new-members`);
+        }
+
+        // Create an embed message for the new member
+        const welcomeEmbed = new EmbedBuilder()
+            .setColor('#5865F2')
+            .setTitle('🎉 New Member Joined!')
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+            .addFields(
+                { name: '👤 User', value: `${member.user.tag}`, inline: true },
+                { name: '🆔 User ID', value: `${member.user.id}`, inline: true },
+                { name: '📅 Account Created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: false },
+                { name: '👥 Member Count', value: `${guild.memberCount}`, inline: true }
+            )
+            .setTimestamp()
+            .setFooter({ text: `Welcome to ${guild.name}!` });
+
+        // Send the message to the channel
+        await newMembersChannel.send({ 
+            content: `Welcome ${member}! 👋`,
+            embeds: [welcomeEmbed] 
+        });
+
+        console.log(`✅ Welcome message posted in #new-members for ${member.user.tag}`);
 
     } catch (error) {
         console.error("Error handling user join:", error);
     }
 });
 
-// Handle user being added to specific channels
-// Note: Discord.js doesn't have a direct "user added to channel" event
-// You would need to implement this based on your specific requirements
-// For example, tracking voice channel joins or specific role assignments
-
 // Login to Discord with your client token
-client.login(process.env.DISCORDBOTTOKEN);
+client.login(process.env.DISCORDBOTTOKEN)
+    .then(() => console.log('Discord bot login initiated...'))
+    .catch(error => {
+        console.error('failed to login to Discord:', error);
+        process.exit(1);
+    });
 
 module.exports = client;
