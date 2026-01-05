@@ -3,13 +3,9 @@ const connectDB = require('./config/db');
 const DiscordServer = require('./models/DiscordServer');
 const { sendServerJoinNotification, sendUserJoinNotification } = require('./services/emailService');
 
-http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.write("Bot is alive and listening for pings!");
-    res.end();
-}).listen(process.env.PORT || 10000, () => {
-    console.log(`Keep-alive server listening on port ${process.env.PORT || 10000}`);
-});
+
+
+
 
 // Load environment variables
 require('dotenv').config();
