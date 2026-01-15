@@ -1,3 +1,5 @@
+//GHOSTMONITOR.JS
+
 const { Client } = require('discord.js-selfbot-v13');
 const mainBot = require('./bot'); 
 require('dotenv').config();
@@ -31,7 +33,7 @@ const TARGET_SERVER_IDS = [
     '1085603142625927190',
     '1335140845870911552',
     '1244040902117167174',
-    '',
+
 ];
 
 const ALERT_CHANNEL_ID = '1455976915717325017'; 

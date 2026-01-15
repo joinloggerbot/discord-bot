@@ -1,3 +1,5 @@
+//models/DiscordServer.js
+
 const mongoose = require('mongoose');
 
 const discordServerSchema = new mongoose.Schema({

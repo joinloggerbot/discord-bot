@@ -1,3 +1,5 @@
+//DISCORD_BOT.JS
+
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const connectDB = require('./config/db');
 const DiscordServer = require('./models/DiscordServer');
