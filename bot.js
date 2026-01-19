@@ -171,10 +171,16 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 // Login to Discord with your client token
+console.log('Attempting Discord bot login...');
+console.log('Token exists:', !!process.env.DISCORDBOTTOKEN);
+
 client.login(process.env.DISCORDBOTTOKEN)
-    .then(() => console.log('Discord bot login initiated...'))
     .catch(error => {
-        console.error('failed to login to Discord:', error);
+        console.error('❌ Failed to login to Discord!');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Full error:', error);
         process.exit(1);
     });
 
