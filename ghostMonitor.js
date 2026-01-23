@@ -33,7 +33,6 @@ const TARGET_SERVER_IDS = [
     '1085603142625927190',
     '1335140845870911552',
     '1244040902117167174',
-
 ];
 
 const ALERT_CHANNEL_ID = '1455976915717325017'; 
@@ -83,5 +82,34 @@ async function sendAlert(username, serverName, method) {
     }
 }
 
-ghostClient.login(process.env.GHOST_TOKEN);
+// Login to Discord with ghost token
+const ghostToken = process.env.GHOST_TOKEN;
+
+console.log('===========================================');
+console.log('GHOST BOT LOGIN ATTEMPT');
+console.log('===========================================');
+console.log('Ghost token exists:', !!ghostToken);
+console.log('Ghost token length:', ghostToken ? ghostToken.length : 0);
+console.log('Ghost token preview:', ghostToken ? `${ghostToken.substring(0, 20)}...` : 'N/A');
+
+if (!ghostToken) {
+    console.error('❌ GHOST_TOKEN environment variable is missing!');
+    console.error('Ghost monitor will not be active.');
+    console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('GHOST') || k.includes('TOKEN')));
+    // Don't exit - let main bot continue working
+} else {
+    ghostClient.login(ghostToken)
+        .then(() => {
+            console.log('✅ Ghost bot login promise resolved successfully');
+        })
+        .catch(error => {
+            console.error('❌ GHOST BOT LOGIN FAILED!');
+            console.error('Error name:', error.name);
+            console.error('Error message:', error.message);
+            console.error('Error code:', error.code);
+            console.error('Full error:', JSON.stringify(error, null, 2));
+            // Don't exit - let main bot continue
+        });
+}
+
 module.exports = ghostClient;

@@ -5,10 +5,6 @@ const connectDB = require('./config/db');
 const DiscordServer = require('./models/DiscordServer');
 const { sendServerJoinNotification, sendUserJoinNotification } = require('./services/emailService');
 
-
-
-
-
 // Load environment variables
 require('dotenv').config();
 
@@ -24,8 +20,8 @@ const client = new Client({
 });
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
-    console.log(`Bot logged in as ${client.user.tag}!`);
+client.once('clientReady', () => {
+    console.log(`✅ Bot logged in as ${client.user.tag}!`);
     console.log(`Bot is in ${client.guilds.cache.size} servers`);
     
     // Log all servers the bot is in
@@ -171,16 +167,32 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 // Login to Discord with your client token
-console.log('Attempting Discord bot login...');
-console.log('Token exists:', !!process.env.DISCORDBOTTOKEN);
+const token = process.env.DISCORDBOTTOKEN;
 
-client.login(process.env.DISCORDBOTTOKEN)
+console.log('===========================================');
+console.log('MAIN BOT LOGIN ATTEMPT');
+console.log('===========================================');
+console.log('Attempting Discord bot login...');
+console.log('Token exists:', !!token);
+console.log('Token length:', token ? token.length : 0);
+console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'N/A');
+
+if (!token) {
+    console.error('❌ DISCORDBOTTOKEN environment variable is missing!');
+    console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('DISCORD') || k.includes('BOT') || k.includes('TOKEN')));
+    process.exit(1);
+}
+
+client.login(token)
+    .then(() => {
+        console.log('✅ Main bot login promise resolved successfully');
+    })
     .catch(error => {
-        console.error('❌ Failed to login to Discord!');
+        console.error('❌ MAIN BOT LOGIN FAILED!');
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);
         console.error('Error code:', error.code);
-        console.error('Full error:', error);
+        console.error('Full error:', JSON.stringify(error, null, 2));
         process.exit(1);
     });
 
