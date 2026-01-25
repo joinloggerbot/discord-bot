@@ -88,9 +88,9 @@ async function sendAlert(username, serverName, method) {
 // Login to Discord with ghost token
 const ghostToken = process.env.GHOST_TOKEN;
 
-console.log('===========================================');
+console.log('===============================================');
 console.log('GHOST BOT LOGIN ATTEMPT');
-console.log('===========================================');
+console.log('===============================================');
 console.log('Ghost token exists:', !!ghostToken);
 console.log('Ghost token length:', ghostToken ? ghostToken.length : 0);
 console.log('Ghost token preview:', ghostToken ? `${ghostToken.substring(0, 20)}...` : 'N/A');
