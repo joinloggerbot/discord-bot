@@ -29,6 +29,6 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// Removed duplicate index - the unique: true above already creates an index
+// Removed duplicate index definition
 
 module.exports = mongoose.model('User', userSchema);
