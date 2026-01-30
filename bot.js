@@ -20,7 +20,7 @@ const client = new Client({
 });
 
 // When the client is ready, run this code (only once)
-client.once('clientReady', () => {
+client.once('ready', () => {
     console.log(`✅ Bot logged in as ${client.user.tag}!`);
     console.log(`Bot is in ${client.guilds.cache.size} servers`);
     
