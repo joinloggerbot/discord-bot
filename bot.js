@@ -202,7 +202,7 @@ if (!token) {
     process.exit(1);
 }
 
-// Add a timeout to detect hanging connections
+// Add a timeout to detect hanging connections ///
 const loginTimeout = setTimeout(() => {
     console.error('⏱️ MAIN BOT LOGIN TIMEOUT - No response after 30 seconds');
     console.error('This may indicate network connectivity issues or Discord API problems');
