@@ -19,8 +19,11 @@ const client = new Client({
     ]
 });
 
-// When the client is ready, run this code (only once)
-client.once('ready', () => {
+// Add event handlers BEFORE login attempt
+client.on('ready', () => {
+    console.log('===========================================');
+    console.log('✅ MAIN BOT READY EVENT FIRED');
+    console.log('===========================================');
     console.log(`✅ Bot logged in as ${client.user.tag}!`);
     console.log(`Bot is in ${client.guilds.cache.size} servers`);
     
@@ -28,6 +31,22 @@ client.once('ready', () => {
     client.guilds.cache.forEach(guild => {
         console.log(`  - ${guild.name} (ID: ${guild.id}) - ${guild.memberCount} members`);
     });
+});
+
+client.on('error', error => {
+    console.error('❌ DISCORD CLIENT ERROR:', error);
+});
+
+client.on('warn', info => {
+    console.warn('⚠️ DISCORD CLIENT WARNING:', info);
+});
+
+client.on('shardError', error => {
+    console.error('❌ SHARD ERROR:', error);
+});
+
+client.on('shardDisconnect', (event, id) => {
+    console.warn(`⚠️ SHARD ${id} DISCONNECTED:`, event);
 });
 
 // Handle when bot is added to a new server
@@ -183,11 +202,19 @@ if (!token) {
     process.exit(1);
 }
 
+// Add a timeout to detect hanging connections
+const loginTimeout = setTimeout(() => {
+    console.error('⏱️ MAIN BOT LOGIN TIMEOUT - No response after 30 seconds');
+    console.error('This may indicate network connectivity issues or Discord API problems');
+}, 30000); // 30 second timeout
+
 client.login(token)
     .then(() => {
+        clearTimeout(loginTimeout);
         console.log('✅ Main bot login promise resolved successfully');
     })
     .catch(error => {
+        clearTimeout(loginTimeout);
         console.error('❌ MAIN BOT LOGIN FAILED!');
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);

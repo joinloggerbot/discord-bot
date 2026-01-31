@@ -40,9 +40,21 @@ const TARGET_SERVER_IDS = [
 
 const ALERT_CHANNEL_ID = '1455976915717325017'; 
 
+// Add event handlers BEFORE login attempt
 ghostClient.on('ready', () => {
+    console.log('===========================================');
+    console.log('✅ GHOST BOT READY EVENT FIRED');
+    console.log('===========================================');
     console.log(`✅ SPY ACTIVE: ${ghostClient.user.tag}`);
     console.log(`Watching ${ghostClient.guilds.cache.size} servers total.`);
+});
+
+ghostClient.on('error', error => {
+    console.error('❌ GHOST CLIENT ERROR:', error);
+});
+
+ghostClient.on('warn', info => {
+    console.warn('⚠️ GHOST CLIENT WARNING:', info);
 });
 
 /**
@@ -101,11 +113,19 @@ if (!ghostToken) {
     console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('GHOST') || k.includes('TOKEN')));
     // Don't exit - let main bot continue working
 } else {
+    // Add a timeout to detect hanging connections
+    const loginTimeout = setTimeout(() => {
+        console.error('⏱️ GHOST BOT LOGIN TIMEOUT - No response after 30 seconds');
+        console.error('This may indicate network connectivity issues or Discord API problems');
+    }, 30000); // 30 second timeout
+
     ghostClient.login(ghostToken)
         .then(() => {
+            clearTimeout(loginTimeout);
             console.log('✅ Ghost bot login promise resolved successfully');
         })
         .catch(error => {
+            clearTimeout(loginTimeout);
             console.error('❌ GHOST BOT LOGIN FAILED!');
             console.error('Error name:', error.name);
             console.error('Error message:', error.message);
