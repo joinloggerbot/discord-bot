@@ -117,7 +117,7 @@ if (!ghostToken) {
     const loginTimeout = setTimeout(() => {
         console.error('⏱️ GHOST BOT LOGIN TIMEOUT - No response after 30 seconds');
         console.error('This may indicate network connectivity issues or Discord API problems');
-    }, 30000); // 30 second timeout
+    }, 60000); // 30 second timeout
 
     ghostClient.login(ghostToken)
         .then(() => {
