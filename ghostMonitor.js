@@ -58,23 +58,8 @@ ghostClient.on('warn', info => {
 });
 
 /**
- * SCENARIO A: The server has "Welcome Messages" ENABLED.
- * This catches the system message like "User joined the party!"
- */
-ghostClient.on('messageCreate', async (message) => {
-    if (message.type === 'GUILD_MEMBER_JOIN' && TARGET_SERVER_IDS.includes(message.guild.id)) {
-        sendAlert(message.author.username, message.guild.name, "System Message");
-    }
-
-    // Manual Test Command
-    if (message.content === '!testspy') {
-        sendAlert("TEST_USER", message.guild.name, "Manual Test");
-    }
-});
-
-/**
- * SCENARIO B: The server has "Welcome Messages" DISABLED.
- * This triggers the moment a user hits the 'Join' button, even if no message is sent.
+ * Detect when a user joins any of the monitored servers.
+ * This event fires regardless of whether welcome messages are enabled.
  */
 ghostClient.on('guildMemberAdd', async (member) => {
     if (TARGET_SERVER_IDS.includes(member.guild.id)) {
@@ -82,7 +67,7 @@ ghostClient.on('guildMemberAdd', async (member) => {
     }
 });
 
-// SHARED ALERT FUNCTION (Matches your client's image style)
+// SHARED ALERT FUNCTION
 async function sendAlert(username, serverName, method) {
     try {
         console.log(`🚨 Join detected via ${method}: ${username} in ${serverName}`);
@@ -117,7 +102,7 @@ if (!ghostToken) {
     const loginTimeout = setTimeout(() => {
         console.error('⏱️ GHOST BOT LOGIN TIMEOUT - No response after 30 seconds');
         console.error('This may indicate network connectivity issues or Discord API problems');
-    }, 60000); // 30 second timeout
+    }, 60000); // 60 second timeout
 
     ghostClient.login(ghostToken)
         .then(() => {
