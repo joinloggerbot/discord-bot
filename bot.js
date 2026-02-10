@@ -1,4 +1,4 @@
-//DISCORD_BOT.JS
+//DISCORD_BOT.JS - UPDATED WITH RECONNECTION HANDLING
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const connectDB = require('./config/db');
@@ -19,13 +19,28 @@ const client = new Client({
     ]
 });
 
-// Add event handlers BEFORE login attempt
+// ============================================
+// CONNECTION STATUS TRACKING
+// ============================================
+let connectionStatus = {
+    isConnected: false,
+    lastDisconnect: null,
+    reconnectAttempts: 0
+};
+
+// ============================================
+// READY EVENT
+// ============================================
 client.on('ready', () => {
     console.log('===========================================');
     console.log('✅ MAIN BOT READY EVENT FIRED');
     console.log('===========================================');
     console.log(`✅ Bot logged in as ${client.user.tag}!`);
     console.log(`Bot is in ${client.guilds.cache.size} servers`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
+    
+    connectionStatus.isConnected = true;
+    connectionStatus.reconnectAttempts = 0;
     
     // Log all servers the bot is in
     client.guilds.cache.forEach(guild => {
@@ -33,25 +48,100 @@ client.on('ready', () => {
     });
 });
 
+// ============================================
+// ERROR HANDLING EVENTS
+// ============================================
 client.on('error', error => {
     console.error('❌ DISCORD CLIENT ERROR:', error);
+    console.error('Error timestamp:', new Date().toISOString());
 });
 
 client.on('warn', info => {
     console.warn('⚠️ DISCORD CLIENT WARNING:', info);
+    console.warn('Warning timestamp:', new Date().toISOString());
 });
 
 client.on('shardError', error => {
     console.error('❌ SHARD ERROR:', error);
+    console.error('Shard error timestamp:', new Date().toISOString());
 });
 
+// ============================================
+// RECONNECTION EVENTS
+// ============================================
 client.on('shardDisconnect', (event, id) => {
-    console.warn(`⚠️ SHARD ${id} DISCONNECTED:`, event);
+    console.warn('===========================================');
+    console.warn(`⚠️ SHARD ${id} DISCONNECTED`);
+    console.warn('===========================================');
+    console.warn('Disconnect event:', event);
+    console.warn('Timestamp:', new Date().toISOString());
+    
+    connectionStatus.isConnected = false;
+    connectionStatus.lastDisconnect = new Date().toISOString();
 });
+
+client.on('shardReconnecting', (id) => {
+    console.log('===========================================');
+    console.log(`🔄 SHARD ${id} RECONNECTING...`);
+    console.log('===========================================');
+    console.log('Timestamp:', new Date().toISOString());
+    
+    connectionStatus.reconnectAttempts++;
+    console.log(`Reconnect attempt #${connectionStatus.reconnectAttempts}`);
+});
+
+client.on('shardReady', (id) => {
+    console.log('===========================================');
+    console.log(`✅ SHARD ${id} READY`);
+    console.log('===========================================');
+    console.log('Timestamp:', new Date().toISOString());
+});
+
+client.on('shardResume', (id, replayedEvents) => {
+    console.log('===========================================');
+    console.log(`🔄 SHARD ${id} RESUMED`);
+    console.log('===========================================');
+    console.log(`Replayed ${replayedEvents} events`);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    connectionStatus.isConnected = true;
+});
+
+client.on('disconnect', () => {
+    console.warn('===========================================');
+    console.warn('⚠️ MAIN CLIENT DISCONNECTED');
+    console.warn('===========================================');
+    console.warn('Timestamp:', new Date().toISOString());
+    
+    connectionStatus.isConnected = false;
+    connectionStatus.lastDisconnect = new Date().toISOString();
+});
+
+// ============================================
+// RATE LIMIT HANDLING
+// ============================================
+client.on('rateLimit', (rateLimitData) => {
+    console.warn('===========================================');
+    console.warn('⚠️ RATE LIMIT HIT');
+    console.warn('===========================================');
+    console.warn('Timeout:', rateLimitData.timeout, 'ms');
+    console.warn('Limit:', rateLimitData.limit);
+    console.warn('Method:', rateLimitData.method);
+    console.warn('Path:', rateLimitData.path);
+    console.warn('Timestamp:', new Date().toISOString());
+});
+
+// ============================================
+// GUILD EVENTS
+// ============================================
 
 // Handle when bot is added to a new server
 client.on('guildCreate', async (guild) => {
-    console.log(`Bot added to new server: ${guild.name} (ID: ${guild.id})`);
+    console.log('===========================================');
+    console.log(`✅ BOT ADDED TO NEW SERVER`);
+    console.log('===========================================');
+    console.log(`Server: ${guild.name} (ID: ${guild.id})`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
 
     try {
         // Check if server already exists in database
@@ -84,7 +174,7 @@ client.on('guildCreate', async (guild) => {
 
         // Save to database
         await serverData.save();
-        console.log(`Server "${serverData.name}" information stored in database.`);
+        console.log(`✅ Server "${serverData.name}" information stored in database.`);
 
         // Send notification email to admin
         const emailSent = await sendServerJoinNotification(
@@ -94,26 +184,30 @@ client.on('guildCreate', async (guild) => {
         );
 
         if (emailSent) {
-            console.log(`Notification email sent for server: ${serverData.name}`);
+            console.log(`✅ Notification email sent for server: ${serverData.name}`);
         } else {
-            console.log(`Failed to send notification email for server: ${serverData.name}`);
+            console.log(`❌ Failed to send notification email for server: ${serverData.name}`);
         }
 
     } catch (error) {
-        console.error("Error storing server information:", error);
+        console.error("❌ Error storing server information:", error);
     }
 });
 
 // Handle when bot is removed from a server
 client.on('guildDelete', async (guild) => {
-    console.log(`Bot removed from server: ${guild.name} (ID: ${guild.id})`);
+    console.log('===========================================');
+    console.log(`⚠️ BOT REMOVED FROM SERVER`);
+    console.log('===========================================');
+    console.log(`Server: ${guild.name} (ID: ${guild.id})`);
+    console.log(`Timestamp: ${new Date().toISOString()}`);
 
     try {
         // Remove server from database
         await DiscordServer.deleteOne({ id: guild.id });
-        console.log(`Server "${guild.name}" removed from database.`);
+        console.log(`✅ Server "${guild.name}" removed from database.`);
     } catch (error) {
-        console.error("Error removing server information:", error);
+        console.error("❌ Error removing server information:", error);
     }
 });
 
@@ -122,7 +216,12 @@ client.on('guildMemberAdd', async (member) => {
     try {
         const guild = member.guild;
         
-        console.log(`New member joined: ${member.user.tag} in server: ${guild.name}`);
+        console.log('===========================================');
+        console.log(`👤 NEW MEMBER JOINED`);
+        console.log('===========================================');
+        console.log(`User: ${member.user.tag}`);
+        console.log(`Server: ${guild.name}`);
+        console.log(`Timestamp: ${new Date().toISOString()}`);
 
         // Send email notification
         const emailSent = await sendUserJoinNotification(
@@ -144,7 +243,6 @@ client.on('guildMemberAdd', async (member) => {
 
         if (!newMembersChannel) {
             console.log(`⚠️ Could not find #new-members channel in ${guild.name}`);
-            console.log(`Available channels: ${guild.channels.cache.map(ch => ch.name).join(', ')}`);
             return;
         }
 
@@ -181,11 +279,14 @@ client.on('guildMemberAdd', async (member) => {
         console.log(`✅ Welcome message posted in #new-members for ${member.user.tag}`);
 
     } catch (error) {
-        console.error("Error handling user join:", error);
+        console.error("❌ Error handling user join:", error);
+        console.error("Error timestamp:", new Date().toISOString());
     }
 });
 
-// Login to Discord with your client token
+// ============================================
+// LOGIN
+// ============================================
 const token = process.env.DISCORDBOTTOKEN;
 
 console.log('===========================================');
@@ -195,6 +296,7 @@ console.log('Attempting Discord bot login...');
 console.log('Token exists:', !!token);
 console.log('Token length:', token ? token.length : 0);
 console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'N/A');
+console.log('Timestamp:', new Date().toISOString());
 
 if (!token) {
     console.error('❌ DISCORDBOTTOKEN environment variable is missing!');
@@ -202,25 +304,53 @@ if (!token) {
     process.exit(1);
 }
 
-// Add a timeout to detect hanging connections ///
+// Add a timeout to detect hanging connections
 const loginTimeout = setTimeout(() => {
-    console.error('⏱️ MAIN BOT LOGIN TIMEOUT - No response after 30 seconds');
+    console.error('===========================================');
+    console.error('⏱️ MAIN BOT LOGIN TIMEOUT');
+    console.error('===========================================');
+    console.error('No response after 60 seconds');
     console.error('This may indicate network connectivity issues or Discord API problems');
-}, 60000); // 30 second timeout
+    console.error('Timestamp:', new Date().toISOString());
+}, 60000);
 
 client.login(token)
     .then(() => {
         clearTimeout(loginTimeout);
-        console.log('✅ Main bot login promise resolved successfully');
+        console.log('===========================================');
+        console.log('✅ MAIN BOT LOGIN PROMISE RESOLVED');
+        console.log('===========================================');
+        console.log('Timestamp:', new Date().toISOString());
     })
     .catch(error => {
         clearTimeout(loginTimeout);
+        console.error('===========================================');
         console.error('❌ MAIN BOT LOGIN FAILED!');
+        console.error('===========================================');
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);
         console.error('Error code:', error.code);
         console.error('Full error:', JSON.stringify(error, null, 2));
+        console.error('Timestamp:', new Date().toISOString());
         process.exit(1);
     });
+
+// ============================================
+// CONNECTION STATUS LOGGER
+// ============================================
+setInterval(() => {
+    console.log('===========================================');
+    console.log('📊 MAIN BOT STATUS CHECK');
+    console.log('===========================================');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('WebSocket Status:', client.ws.status);
+    console.log('Is Connected:', connectionStatus.isConnected);
+    console.log('Ping:', client.ws.ping, 'ms');
+    console.log('Reconnect Attempts:', connectionStatus.reconnectAttempts);
+    if (connectionStatus.lastDisconnect) {
+        console.log('Last Disconnect:', connectionStatus.lastDisconnect);
+    }
+    console.log('Guilds:', client.guilds.cache.size);
+}, 120000); // Every 2 minutes
 
 module.exports = client;
