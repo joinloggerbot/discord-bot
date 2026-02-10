@@ -298,6 +298,20 @@ console.log('Token length:', token ? token.length : 0);
 console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'N/A');
 console.log('Timestamp:', new Date().toISOString());
 
+// Quick network check
+console.log('');
+console.log('🔍 Running network diagnostics...');
+const https = require('https');
+https.get('https://discord.com/api/v10/gateway', (res) => {
+    console.log('✅ Discord API Gateway reachable');
+    console.log('Status:', res.statusCode);
+}).on('error', (err) => {
+    console.error('❌ Cannot reach Discord API Gateway!');
+    console.error('Network error:', err.message);
+    console.error('This explains why the bot cannot connect.');
+});
+console.log('');
+
 if (!token) {
     console.error('❌ DISCORDBOTTOKEN environment variable is missing!');
     console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('DISCORD') || k.includes('BOT') || k.includes('TOKEN')));
@@ -309,10 +323,15 @@ const loginTimeout = setTimeout(() => {
     console.error('===========================================');
     console.error('⏱️ MAIN BOT LOGIN TIMEOUT');
     console.error('===========================================');
-    console.error('No response after 60 seconds');
+    console.error('No response after 120 seconds');
     console.error('This may indicate network connectivity issues or Discord API problems');
     console.error('Timestamp:', new Date().toISOString());
-}, 60000);
+    console.error('');
+    console.error('TROUBLESHOOTING:');
+    console.error('1. Check Discord API status: https://discordstatus.com/');
+    console.error('2. Verify your bot token is valid');
+    console.error('3. Check if Render can reach Discord servers');
+}, 120000); // 120 second timeout
 
 client.login(token)
     .then(() => {

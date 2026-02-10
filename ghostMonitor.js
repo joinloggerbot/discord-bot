@@ -274,13 +274,16 @@ if (!ghostToken) {
         console.error('===========================================');
         console.error('⏱️ GHOST BOT LOGIN TIMEOUT');
         console.error('===========================================');
-        console.error('No response after 60 seconds');
+        console.error('No response after 120 seconds');
         console.error('This may indicate:');
         console.error('  - Network connectivity issues');
         console.error('  - Discord API problems');
         console.error('  - Invalid or banned user token');
+        console.error('  - Discord detecting self-bot activity');
         console.error('Timestamp:', new Date().toISOString());
-    }, 60000);
+        console.error('');
+        console.error('The ghost bot will continue attempting to connect...');
+    }, 120000); // 120 second timeout
 
     ghostClient.login(ghostToken)
         .then(() => {

@@ -99,9 +99,14 @@ console.log('About to require ./bot...');
 require('./bot');
 console.log('✅ Main bot module loaded');
 
-console.log('About to require ./ghostMonitor...');
-require('./ghostMonitor');
-console.log('✅ Ghost monitor module loaded');
+// Wait 10 seconds before loading ghost bot to avoid rate limiting
+setTimeout(() => {
+    console.log('');
+    console.log('⏱️ Starting ghost bot with 10 second delay...');
+    console.log('About to require ./ghostMonitor...');
+    require('./ghostMonitor');
+    console.log('✅ Ghost monitor module loaded');
+}, 10000);
 
 // ============================================
 // BOT HEARTBEAT MONITOR
